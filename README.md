@@ -1,2 +1,2 @@
-# recipe-generator-app
-shiny app for generating nicely formatted recipe PDFs
+# R Shiny App for Recipe Formatting
+This repository contains a VERY preliminary application for generating nicely formatted recipe PDFs from user-supplied inputs.  Implementation uses knitr within R Shiny to create PDFs from dynamically generated Latex and markdown. Latex style files and much of the PDF formatting were shamelessly borrowed (and altered) from [this Overleaf template](https://www.overleaf.com/latex/examples/simple-recipes-for-first-time-away-from-home-cooks/gscqdhnwzsfg). 
