@@ -1,0 +1,11 @@
+% !TeX program = XeLaTeX
+\documentclass{article}
+\usepackage{scrextend}
+\changefontsizes[25pt]{13pt}
+\usepackage{simple-recipe}
+\usepackage{textcomp}
+\recipestyle{classic}
+\usepackage[margin=0.75in,includefoot,bottom=0.3in,footskip=2em]{geometry}
+\begin{document}
+\markdownInput{input.md}
+\end{document}

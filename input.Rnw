@@ -25,9 +25,6 @@
 %% Treat each "page" of the booklet as a full-sized  paper first
 \usepackage[margin=0.75in,includefoot,bottom=0.3in,footskip=2em]{geometry}
 
-%% ...and _then_ make it into a pocketmod booklet! (It may help to comment out this line while you're working on the contents, and only enable it when you're ready to really turn your doc into a pocketmod booklet
-% \usepackage[showmarks]{pocketmod}
-
 
 \begin{document}
 
