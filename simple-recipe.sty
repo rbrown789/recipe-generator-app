@@ -1,0 +1,62 @@
+\RequirePackage[hyphens]{url}
+
+\RequirePackage{parskip}
+\RequirePackage[dvipsnames]{xcolor}
+\RequirePackage{ccicons}
+\RequirePackage{adjustbox}
+
+\colorlet{recipe-accent-1}{black}
+\colorlet{recipe-accent-2}{black}
+\colorlet{recipe-accent-3}{black}
+
+\newcommand{\rcAuthorSymbol}{\textbullet}
+\newcommand{\rcClockSymbol}{\textbullet}
+\newcommand{\rcServingSymbol}{\textbullet}
+
+
+\RequirePackage[footnotes,definitionLists,hashEnumerators,smartEllipses,tightLists=false,hybrid]{markdown}
+% \def\markdownOptionOutputDir{/tmp}
+
+\RequirePackage[inline]{enumitem}
+\setlist*[itemize]{font={\color{recipe-accent-2}}}
+\setlist*[enumerate]{font=\color{recipe-accent-1}}
+\setlist*[description]{font=\color{recipe-accent-1},leftmargin=3em}
+
+\setkeys{Gin}{width=\hsize,height=\textheight,keepaspectratio}
+\markdownSetup{rendererPrototypes={
+  image = {\bigskip\begingroup%
+    \adjincludegraphics{#3}\\%
+    \ifx\empty#4\empty\else
+    {\footnotesize\sffamily\color{recipe-accent-3} #4}%
+    \fi\endgroup\bigskip},
+   ulBegin={\begin{itemize*}},
+   ulEnd={\end{itemize*}}
+}}
+
+
+\renewcommand{\maketitle}{
+{\color{recipe-accent-3}\centering\Huge\sffamily\@title\par}
+\bigskip
+\vfill
+{\centering\Large\sffamily\@author\par}
+{\centering\large\sffamily\@date\par}
+\thispagestyle{empty}
+\setcounter{page}{0}
+}
+
+\RequirePackage{titlesec}
+\titleformat{\section}{\color{recipe-accent-3}\sffamily\LARGE}{\thesection}{0pt}{}
+\titlespacing*{\section}{0pt}{\baselineskip}{\baselineskip}{}
+\titleformat*{\subsection}{\color{recipe-accent-3}\sffamily\large}
+\titlespacing*{\subsection}{0pt}{\baselineskip}{0pt}{}
+
+\setcounter{secnumdepth}{0}
+
+
+\newcommand{\recipestyle}[1]{%
+  \IfFileExists{rc-#1.sty}{%
+    \RequirePackage{rc-#1}
+  }{%
+    \PackageWarning{simple-recipe}{File rc-#1.sty not found; reverting to default style.}%
+  }
+}
