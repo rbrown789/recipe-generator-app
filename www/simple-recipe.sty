@@ -15,7 +15,7 @@
 
 
 \RequirePackage[footnotes,definitionLists,hashEnumerators,smartEllipses,tightLists=false,hybrid]{markdown}
-% \def\markdownOptionOutputDir{/tmp}
+
 
 \RequirePackage[inline]{enumitem}
 \setlist*[itemize]{font={\color{recipe-accent-2}}}
@@ -29,8 +29,8 @@
     \ifx\empty#4\empty\else
     {\footnotesize\sffamily\color{recipe-accent-3} #4}%
     \fi\endgroup\bigskip},
-   ulBegin={\begin{itemize*}},
-   ulEnd={\end{itemize*}}
+   ulBegin={\begin{itemize}},
+   ulEnd={\end{itemize}}
 }}
 
 
