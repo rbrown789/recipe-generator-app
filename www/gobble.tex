@@ -1,0 +1,165 @@
+%
+%    \begin{macrocode}
+\expandafter\ifx\csname gobble.tex loaded\endcsname\relax
+    \expandafter\def\csname gobble.tex loaded\endcsname{1}%
+\else
+    \expandafter\endinput
+\fi
+%    \end{macrocode}
+%
+% \begin{macro}{\gobbletex@catcode}
+%    \begin{macrocode}
+\expandafter\edef\csname gobbletex@catcode\endcsname{%
+    \catcode`\noexpand\@=\the\catcode`\@%
+}%
+\catcode`\@=11
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\@gobble}
+% \begin{macro}{\@gobbletwo}
+% \begin{macro}{\@gobblethree}
+% \begin{macro}{\@gobblefour}
+%    \begin{macrocode}
+\long\def\@gobble#1{}%
+\long\def\@gobbletwo#1#2{}%
+\long\def\@gobblethree#1#2#3{}%
+\long\def\@gobblefour#1#2#3#4{}%
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+%
+% \begin{macro}{\@gobbleopt}
+%    \begin{macrocode}
+\long\def\@gobbleopt{%
+    \@ifnextchar[%
+        {\@gobbleopt@}%
+        {}%
+}%
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@gobbleopt@}
+%    \begin{macrocode}
+\def\@gobbleopt@[#1]{}%
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\@gobbletwoopt}
+%    \begin{macrocode}
+\long\def\@gobbletwoopt{%
+    \@ifnextchar[%
+        {\@gobbletwoopt@}%
+        {}%
+}%
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@gobbletwoopt@}
+%    \begin{macrocode}
+\def\@gobbletwoopt@[#1]{\@gobbleopt}%
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\@gobbleallopt}
+%    \begin{macrocode}
+\long\def\@gobbleallopt{%
+    \@ifnextchar[%
+        {\@gobbleallopt@}%
+        {}%
+}%
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\@gobbleallopt@}
+%    \begin{macrocode}
+\long\def\@gobbleallopt@[#1]{%
+    \@ifnextchar[%
+        {\@gobbleallopt@}%
+        {}%
+}%
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \begin{macro}{\@gobbletwoopttwo}
+%    \begin{macrocode}
+\long\def\@gobbletwoopttwo{%
+    \@ifnextchar[%
+        {\@gobbletwoopttwo@}%
+        {\@gobbletwo}%
+}%
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@gobbletwoopttwo@}
+%    \begin{macrocode}
+\long\def\@gobbletwoopttwo@[#1]{%
+    \@ifnextchar[%
+        {\@gobbletwoopttwo@@}%
+        {\@gobbletwo}%
+}%
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@gobbletwoopttwo@@}
+%    \begin{macrocode}
+\long\def\@gobbletwoopttwo@@[#1]{%
+    \@gobbletwo
+}%
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@firstofone}
+%    \begin{macrocode}
+\long\def\@firstofone#1{#1}%
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@firstoftwo}
+% \begin{macro}{\@secondoftwo}
+%    \begin{macrocode}
+\long\def\@firstoftwo#1#2{#1}%
+\long\def\@secondoftwo#1#2{#2}%
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+%
+% \begin{macro}{\@firstofthree}
+% \begin{macro}{\@secondofthree}
+% \begin{macro}{\@thirdofthree}
+%    \begin{macrocode}
+\long\def\@firstofthree#1#2#3{#1}%
+\long\def\@secondofthree#1#2#3{#2}%
+\long\def\@thirdofthree#1#2#3{#3}%
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+%
+% \begin{macro}{\@gobbletofi}
+% \begin{macro}{\@gobbletoelse}
+% \begin{macro}{\@gobbletoor}
+%    \begin{macrocode}
+\long\def\@gobbletofi#1#2\fi{\fi#1}%
+\long\def\@gobbletoelse#1#2\else{\else#1}%
+\long\def\@gobbletoor#1#2\or{\or#1}%
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+%    \begin{macrocode}
+\gobbletex@catcode
+%    \end{macrocode}
+%
