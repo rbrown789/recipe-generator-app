@@ -10,6 +10,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinydashboardPlus)
+library(colourpicker)
 library(knitr)
 library(tinytex)
 library(fs)
@@ -33,33 +34,54 @@ parseInstructions <- function(txt)
 
 
 
+palettecols <- data.frame(palette=c("Pastel Green/Gold","Bold Red/Blue/Ochre","Red/Teal"),
+                          title=c("#95A382","#990000","#AA3939"),
+                          ornament=c("#C2CCB0","#990000","#AA3939"),
+                          icon=c("#D6B878","#19347C","#D46A6A"),
+                          icontxt=c("#95A382","#19347C","#D46A6A"),
+                          bullet=c("#D6B878","#DA8035","#407F7F"),
+                          number=c("#D6B878","#19347C","#D46A6A"),
+                          noteaccent=c("#D6B878","#DA8035","#407F7F"),
+                          text=c("#000000","#000000","#000000"),
+                          stringsAsFactors = F)
+
+getColor <- function(palette,item){ return(palettecols[[item]][palettecols$palette == palette]) }
+getColors <- function(palette) { unlist( palettecols[palettecols$palette == palette,-1]) }
+
+
 # Define UI for application that draws a histogram
 
 header <- dashboardHeaderPlus( 
     title = "Recipe Generator"
 )
 
-sidebar <- dashboardSidebar(
+sidebar <- dashboardSidebar(width="250px",
     sidebarMenu(
 
         selectInput("stylechoice","Choose Style",c("Classic","Modern","Scribbly"),selected="Classic"),
         
+        hr(),
+        
+        uiOutput("palSelect"),
+        
+        fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("titColSel") ),
+                  column(5,style='padding: 0px 0px;',uiOutput("ornColSel")) ),
+        
+        fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("iconColSel")),
+                 column(5,style='padding: 0px 0px;',uiOutput("icontxtColSel"))),
+        
+        fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("bullColSel")),
+                 column(5,style='padding: 0px 0px;',uiOutput("numColSel"))),
+        
+        fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("accColSel")),
+                 column(5,style='padding: 0px 0px;',uiOutput("txtColSel"))),
+        
+        hr(),
+        
         numericInput("fontsize","Font Size",13,min=8,max=25,step=1),
         
         numericInput("ingred_cols","# of Ingredients Columns",3,min=1,max=5,step=1)
-
-        # # # Custom CSS to hide the default logout panel
-        # # tags$head(tags$style(HTML('.shiny-server-account { display: none; }'))),
-        # #
-        # # # The dynamically-generated user panel
-        # # uiOutput("userpanel"),
-        #
-        # uiOutput('StudyIDInput'),
-        # menuItem("Main", tabName = "main", icon = icon("dashboard")),
-        # #menuItem("Activities", icon = icon("th"), tabName = "activities"),
-        # #menuItem("Participant Manager", tabName = "participants"),
-        # #menuItem("Device Manager", icon = icon("phone", lib = "glyphicon"), tabName = "devices"),
-        # menuItem("Data Download", tabName = "data", icon = icon("download"))
+       
     )
 )
 
@@ -109,6 +131,116 @@ ui <- dashboardPagePlus(    title = "Roland's Recipe Generator",
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
     
+    
+    
+    reValues <- reactiveValues(pal=palettecols$palette[1],
+                               titcol=getColor(palettecols$palette[1],"title"),
+                               orncol=getColor(palettecols$palette[1],"ornament"),
+                               iconcol=getColor(palettecols$palette[1],"icon"),
+                               icontxtcol=getColor(palettecols$palette[1],"icontxt"),
+                               bullcol=getColor(palettecols$palette[1],"bullet"),
+                               numcol=getColor(palettecols$palette[1],"number"),
+                               acccol=getColor(palettecols$palette[1],"noteaccent"),
+                               txtcol=getColor(palettecols$palette[1],"text"),
+                               colvec = c(getColor(palettecols$palette[1],"title"),getColor(palettecols$palette[1],"ornament"),
+                                           getColor(palettecols$palette[1],"icon"),getColor(palettecols$palette[1],"icontxt"),
+                                           getColor(palettecols$palette[1],"bullet"),getColor(palettecols$palette[1],"number"),
+                                           getColor(palettecols$palette[1],"noteaccent"),getColor(palettecols$palette[1],"text"))
+                               )
+    
+    #####################################################################################################################
+    
+    #### Color Input Reactivity ####
+    
+    # Reactive Palette Selector UI (reacts to color choice)
+    output$palSelect <- renderUI({
+        selectInput("palette","Color Palette",c(palettecols$palette,"Custom"),selected=reValues$pal) 
+    })
+    
+    # Reactive Color selectors UIs for each (reacts to palette choice)
+    output$titColSel <- renderUI({ colourInput("titcol","Title/Headers",value=reValues$titcol,palette="square") })
+    output$ornColSel <- renderUI({ colourInput("orncol","Ornament",value=reValues$orncol,palette="square") })
+    output$iconColSel <- renderUI({ colourInput("iconcol","Icons",value=reValues$iconcol,palette="square") })
+    output$icontxtColSel <- renderUI({ colourInput("icontxtcol","Icon Text",value=reValues$icontxtcol,palette="square") })
+    output$bullColSel <- renderUI({ colourInput("bullcol","Bullets",value=reValues$bullcol,palette="square") })
+    output$numColSel <- renderUI({ colourInput("numcol","Numbers",value=reValues$numcol,palette="square") })
+    output$accColSel <- renderUI({ colourInput("acccol","Note Accent",value=reValues$acccol,palette="square") })
+    output$txtColSel <- renderUI({ colourInput("txtcol","Body Text",value=reValues$txtcol,palette="square") })
+    
+    # change color reactive values based on palette selection
+    observeEvent(input$palette,{
+        if(input$palette=="Custom"){
+        } else{
+            reValues$titcol <- getColor(input$palette,"title")
+            reValues$orncol <- getColor(input$palette,"ornament")
+            reValues$iconcol <- getColor(input$palette,"icon")
+            reValues$icontxtcol <- getColor(input$palette,"icontxt")
+            reValues$bullcol <- getColor(input$palette,"bullet")
+            reValues$numcol <- getColor(input$palette,"number")
+            reValues$acccol <- getColor(input$palette,"noteaccent")
+            reValues$txtcol <- getColor(input$palette,"text")
+            reValues$colvec <- c(getColor(input$palette,"title"),getColor(input$palette,"ornament"),
+                                 getColor(input$palette,"icon"),getColor(input$palette,"icontxt"),
+                                 getColor(input$palette,"bullet"),getColor(input$palette,"number"),
+                                 getColor(input$palette,"noteaccent"),getColor(input$palette,"text"))
+        }
+    })
+    
+    # change color reactive values based on color selection
+    observeEvent(input$titcol,{
+        reValues$titcol <- input$titcol
+        reValues$colvec[1] <- input$titcol
+    })
+    
+    observeEvent(input$orncol,{
+        reValues$orncol <- input$orncol
+        reValues$colvec[2] <- input$orncol
+    })
+    
+    observeEvent(input$iconcol,{
+        reValues$iconcol <- input$iconcol
+        reValues$colvec[3] <- input$iconcol
+    })
+    
+    observeEvent(input$icontxtcol,{
+        reValues$icontxtcol <- input$icontxtcol
+        reValues$colvec[4] <- input$icontxtcol
+    })
+    
+    observeEvent(input$bullcol,{
+        reValues$bullcol <- input$bullcol
+        reValues$colvec[5] <- input$bullcol
+    })
+    
+    observeEvent(input$numcol,{
+        reValues$numcol <- input$numcol
+        reValues$colvec[6] <- input$numcol
+    })
+    
+    observeEvent(input$acccol,{
+        reValues$acccol <- input$acccol
+        reValues$colvec[7] <- input$acccol
+    })
+    
+    observeEvent(input$txtcol,{
+        reValues$txtcol <- input$txtcol
+        reValues$colvec[8] <- input$txtcol
+    })
+    
+    # change Palette reactive value based on color choices
+    observeEvent(reValues$colvec,{
+        
+        palList <- sapply(palettecols$palette,getColors,simplify=F,USE.NAMES=T)
+        
+        nmatch <- sapply(palList,function(x){sum(reValues$colvec==x)})
+        
+        if(8 %in% nmatch){
+            reValues$pal <- names(palList)[which.max(nmatch)]
+        } else { reValues$pal <- "Custom"}
+        
+    })
+    
+    #####################################################################################################################
     
     # generate the temporary Rnw path name, markdown path name, tex path name, and PDF path name
     # these will be overwritten each time the user clicks "Create PDF"
