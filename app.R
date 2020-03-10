@@ -1,12 +1,12 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
 
+######## PREAMBLE ######
+
+# libraries and options
 library(shiny)
 library(shinydashboard)
 library(shinydashboardPlus)
@@ -17,6 +17,7 @@ library(fs)
 options(tinytex.engine_args = '-shell-escape') # https://tex.stackexchange.com/questions/93917/knit-with-pdflatex-shell-escape-myfile-tex
 
 
+# global functions and data
 parseIngredients <- function(txt)
 {
     # txt <- "1 egg\n2 pinches salt\nlove"
@@ -49,14 +50,24 @@ getColor <- function(palette,item){ return(palettecols[[item]][palettecols$palet
 getColors <- function(palette) { unlist( palettecols[palettecols$palette == palette,-1]) }
 
 
-# Define UI for application that draws a histogram
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+
+####### UI CODE #######
 
 header <- dashboardHeaderPlus( 
+    titleWidth="250px",
     title = "Recipe Generator"
 )
 
 sidebar <- dashboardSidebar(width="250px",
     sidebarMenu(
+        
+        h5("PDF Appearance Options"),
+        h5("(no effect currently)"),
 
         selectInput("stylechoice","Choose Style",c("Classic","Modern","Scribbly"),selected="Classic"),
         
@@ -110,29 +121,21 @@ ui <- dashboardPagePlus(    title = "Roland's Recipe Generator",
                             skin = "blue")
 
 
-# 
-# ui <- fluidPage(
-#     fluidRow(
-#     column(width=6,
-#     textInput("name","Recipe Name:","Recipe Name",width=500),
-#     textInput("auth","Recipe Author:","Author",width=500),
-#     textInput("time","Recipe Time:","e.g. 1 hour",width=300),
-#     numericInput("serves","How many servings:",value=1,min=1,max=50,step=1,width=150),
-#     textAreaInput("ingred","Ingredients:",value="List ingredients, one per line. Do not include bullets.", width=750,height=250),
-#     textAreaInput("instruct","Instructions:",value="List instructions, one per line. Do not include numbers.", width=750,height=250),
-#     actionButton('createpdf','Create PDF'),
-#     downloadButton('downloadPDF')
-#     ),
-#     column(width=6,uiOutput('showpdf'))
-#     )
-# )
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
 
+####### SERVER CODE #######
 
-# Define server logic required to draw a histogram
 server <- function(input, output, session) {
     
+    #####################################################################################################################
     
+    #### Color Input Reactivity ####
     
+    # all required reactive values
     reValues <- reactiveValues(pal=palettecols$palette[1],
                                titcol=getColor(palettecols$palette[1],"title"),
                                orncol=getColor(palettecols$palette[1],"ornament"),
@@ -143,14 +146,11 @@ server <- function(input, output, session) {
                                acccol=getColor(palettecols$palette[1],"noteaccent"),
                                txtcol=getColor(palettecols$palette[1],"text"),
                                colvec = c(getColor(palettecols$palette[1],"title"),getColor(palettecols$palette[1],"ornament"),
-                                           getColor(palettecols$palette[1],"icon"),getColor(palettecols$palette[1],"icontxt"),
-                                           getColor(palettecols$palette[1],"bullet"),getColor(palettecols$palette[1],"number"),
-                                           getColor(palettecols$palette[1],"noteaccent"),getColor(palettecols$palette[1],"text"))
-                               )
+                                          getColor(palettecols$palette[1],"icon"),getColor(palettecols$palette[1],"icontxt"),
+                                          getColor(palettecols$palette[1],"bullet"),getColor(palettecols$palette[1],"number"),
+                                          getColor(palettecols$palette[1],"noteaccent"),getColor(palettecols$palette[1],"text"))
+    )
     
-    #####################################################################################################################
-    
-    #### Color Input Reactivity ####
     
     # Reactive Palette Selector UI (reacts to color choice)
     output$palSelect <- renderUI({
@@ -242,6 +242,8 @@ server <- function(input, output, session) {
     
     #####################################################################################################################
     
+    ##### Generating the Rnw, Markdown, tex, and PDF files #####
+    
     # generate the temporary Rnw path name, markdown path name, tex path name, and PDF path name
     # these will be overwritten each time the user clicks "Create PDF"
     rnwpath <- fs::file_temp("input", tmp_dir = "www", ext = ".rnw")
@@ -287,11 +289,15 @@ server <- function(input, output, session) {
         
     })
     
+    #####################################################################################################################
+    
     # download pdf
     output$downloadPDF <- downloadHandler(
         filename = function() {paste0(input$name,".pdf")},
         content = function(file) { file.copy(paste0("www/",pdfpath), file) }
     )
+    
+    #####################################################################################################################
     
     # delete all temporary session files on session end
     session$onSessionEnded(function() {
