@@ -66,10 +66,10 @@ header <- dashboardHeaderPlus(
 sidebar <- dashboardSidebar(width="250px",
     sidebarMenu(
         
-        h5("PDF Appearance Options"),
-        h5("(no effect currently)"),
+        # h5("PDF Appearance Options"),
+        # h5("(no effect currently)"),
 
-        selectInput("stylechoice","Choose Style",c("Classic","Modern","Scribbly"),selected="Classic"),
+        selectInput("stylechoice","Choose Style",c("Classic"),selected="Classic"),
         
         hr(),
         
@@ -106,7 +106,7 @@ body <- dashboardBody(
                textInput("auth","Recipe Author:","Author",width=500),
                textInput("time","Recipe Time:","e.g. 1 hour",width=300),
                numericInput("serves","How many servings:",value=1,min=1,max=50,step=1,width=150),
-               textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=250),
+               textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=200),
                textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=250),
                actionButton('createpdf','Create PDF'),
                downloadButton('downloadPDF')
@@ -247,19 +247,59 @@ server <- function(input, output, session) {
     # generate the temporary Rnw path name, markdown path name, tex path name, and PDF path name
     # these will be overwritten each time the user clicks "Create PDF"
     rnwpath <- fs::file_temp("input", tmp_dir = "www", ext = ".rnw")
+    stypath <- paste0("www/rc-",strsplit(strsplit(rnwpath,".",fixed=T)[[1]][1],"/",fixed=T)[[1]][2],".sty")
     mdpath <- paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".md")
     texpath <- paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".tex")
     pdfpath <- strsplit(paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".pdf"),"/")[[1]][2]
-    
+    filepref <- strsplit(pdfpath,".",fixed=T)[[1]][1]
     
     # create Rnw, markdown, and PDF files based on user input
     observeEvent(input$createpdf,{
+        
+        # create and write the dynamic latex style file
+        stytxt <- paste(
+            c("\\RequirePackage{fontspec}",
+              "\\setsansfont[Path = fonts/]{Anaktoria}",
+              "\\setmainfont[Path = fonts/,UprightFont = *-Regular,BoldFont = *-Bold,ItalicFont = *-Italic]{CharisSIL}",
+              "\\setmonofont[Path = fonts/,Scale=0.92,UprightFont = *-Regular,BoldFont = *-Bold,ItalicFont = *-Italic]{FantasqueSansMono}",
+              paste0("\\definecolor{titcol}{HTML}{",substr(input$titcol,2,7),"}"),
+              paste0("\\definecolor{orncol}{HTML}{",substr(input$orncol,2,7),"}"),
+              paste0("\\definecolor{iconcol}{HTML}{",substr(input$iconcol,2,7),"}"),
+              paste0("\\definecolor{icontxtcol}{HTML}{",substr(input$icontxtcol,2,7),"}"),
+              paste0("\\definecolor{bullcol}{HTML}{",substr(input$bullcol,2,7),"}"),
+              paste0("\\definecolor{numcol}{HTML}{",substr(input$numcol,2,7),"}"),
+              paste0("\\definecolor{acccol}{HTML}{",substr(input$acccol,2,7),"}"),
+              paste0("\\definecolor{txtcol}{HTML}{",substr(input$txtcol,2,7),"}"),
+              "\\RequirePackage{pgfornament}",
+              "\\renewcommand{\\rcAuthorSymbol}{\\pgfornament[width=1.5em,ydelta=-0.5em,color=iconcol]{130}}",
+              "\\renewcommand{\\rcClockSymbol}{\\pgfornament[width=1.5em,ydelta=-0.5em,color=iconcol]{126}}",
+              "\\renewcommand{\\rcServingSymbol}{\\pgfornament[width=1.5em,ydelta=-0.5em,color=iconcol]{166}}",
+              "\\setlist*[itemize]{label={\\pgfornament[height=1em,ydelta=-0.25em]{12}},font={\\color{bullcol}}}",
+              "\\setlist*[enumerate]{font=\\color{numcol}}",
+              "\\setlist*[description]{font=\\color{icontxtcol},leftmargin=3em}",
+              "\\titleformat{\\section}{\\centering\\color{titcol}\\sffamily\\LARGE}{\\thesection}{0pt}{}[\\vskip-0.5\\baselineskip{\\pgfornament[color=orncol]{88}}]",
+              "\\titleformat*{\\subsection}{\\color{titcol}\\sffamily\\large}",
+              "\\renewcommand{\\maketitle}{",
+              "{\\color{titcol}\\centering\\Huge\\sffamily\\@title\\par}",
+              "\\bigskip",
+              "{\\centering\\pgfornament[color=orncol]{88}\\par}",
+              "\\vfill",
+              "{\\centering\\pgfornament[color=iconcol]{181}\\par}",
+              "{\\centering\\Large\\sffamily\\@author\\par}",
+              "{\\centering\\large\\sffamily\\@date\\par}",
+              "\\thispagestyle{empty}",
+              "\\setcounter{page}{0}",
+              "}",
+              "\\RequirePackage{etoolbox}",
+              "\\AtBeginEnvironment{quotation}{\\pgfornament[width=3.5em,color=iconcol]{37}\\par\\vspace*{-2.5\\baselineskip}\\itshape}"),
+                collapse="\n")
+        write(stytxt,file=stypath)
         
         # create and write the dynamic Rnw file that sources the markdown filie
         rnwtxt <- paste(
                     c("% !TeX program = XeLaTeX","\\documentclass{article}","\\usepackage{scrextend}",
                       paste0("\\changefontsizes[25pt]{",input$fontsize,"pt}"),"\\usepackage{simple-recipe}","\\usepackage{textcomp}",
-                      "\\recipestyle{classic}","\\usepackage[margin=0.75in,includefoot,bottom=0.3in,footskip=2em]{geometry}",
+                      paste0("\\recipestyle{",filepref,"}"),"\\usepackage[margin=0.75in,includefoot,bottom=0.3in,footskip=2em]{geometry}",
                       "\\usepackage{multicol}",
                       "\\begin{document}",paste0("\\markdownInput{",strsplit(mdpath,"/")[[1]][2],"}"),"\\end{document}"),
                     collapse="\n")
