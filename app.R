@@ -91,7 +91,7 @@ sidebar <- dashboardSidebar(width="250px",
         
         numericInput("fontsize","Font Size",13,min=8,max=25,step=1),
         
-        numericInput("ingred_cols","# of Ingredients Columns",3,min=1,max=5,step=1)
+        numericInput("ingred_cols","# of Ingredients Columns",3,min=2,max=5,step=1)
        
     )
 )
@@ -106,8 +106,8 @@ body <- dashboardBody(
                textInput("auth","Recipe Author:","Author",width=500),
                textInput("time","Recipe Time:","e.g. 1 hour",width=300),
                numericInput("serves","How many servings:",value=1,min=1,max=50,step=1,width=150),
-               textAreaInput("ingred","Ingredients:",value="List ingredients, one per line. Do not include bullets.", width=750,height=250),
-               textAreaInput("instruct","Instructions:",value="List instructions, one per line. Do not include numbers.", width=750,height=250),
+               textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=250),
+               textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=250),
                actionButton('createpdf','Create PDF'),
                downloadButton('downloadPDF')
         ),
@@ -258,7 +258,7 @@ server <- function(input, output, session) {
         # create and write the dynamic Rnw file that sources the markdown filie
         rnwtxt <- paste(
                     c("% !TeX program = XeLaTeX","\\documentclass{article}","\\usepackage{scrextend}",
-                      "\\changefontsizes[25pt]{13pt}","\\usepackage{simple-recipe}","\\usepackage{textcomp}",
+                      paste0("\\changefontsizes[25pt]{",input$fontsize,"pt}"),"\\usepackage{simple-recipe}","\\usepackage{textcomp}",
                       "\\recipestyle{classic}","\\usepackage[margin=0.75in,includefoot,bottom=0.3in,footskip=2em]{geometry}",
                       "\\usepackage{multicol}",
                       "\\begin{document}",paste0("\\markdownInput{",strsplit(mdpath,"/")[[1]][2],"}"),"\\end{document}"),
@@ -274,7 +274,8 @@ server <- function(input, output, session) {
                      "\\rcAuthorSymbol{} By",paste0(": ",input$auth),"\n",
                      "\\rcClockSymbol{} Ready in",paste0(": ",input$time),"\n",
                      "\\rcServingSymbol{} Serves",paste0(": ",input$serves),"\n",
-                     "## Ingredients \n","\\begin{multicols}{3} \n", parseIngredients(input$ingred),"\n \\end{multicols}",
+                     "## Ingredients \n",paste0("\\begin{multicols}{",input$ingred_cols,"} \n"), 
+                     parseIngredients(input$ingred),"\n \\end{multicols}",
                      "## Instructions","\n",parseInstructions(input$instruct)),
                     collapse="\n")
         write(mdtxt,file=mdpath)
