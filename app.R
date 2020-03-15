@@ -256,7 +256,7 @@ server <- function(input, output, session) {
     # create Rnw, markdown, and PDF files based on user input
     observeEvent(input$createpdf,{
         
-        # create and write the dynamic latex style file
+        # create and write the dynamic latex style file 
         stytxt <- paste(
             c("\\RequirePackage{fontspec}",
               "\\setsansfont[Path = fonts/]{Anaktoria}",
