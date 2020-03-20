@@ -1,0 +1,4 @@
+*.dtx linguist-language=R
+*.tex linguist-language=R
+*.lua linguist-language=R
+*.sty linguist-language=R
