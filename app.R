@@ -33,6 +33,13 @@ parseInstructions <- function(txt)
     return(out)
 }
 
+parseNotes <- function(txt)
+{
+    notesvec <- strsplit(txt,"\n")[[1]]
+    out <- paste0("> ",notesvec)
+    return(out)
+}
+
 
 
 palettecols <- data.frame(palette=c("Pastel Green/Gold","Bold Red/Blue/Ochre","Red/Teal"),
@@ -107,7 +114,8 @@ body <- dashboardBody(
                textInput("time","Recipe Time:","e.g. 1 hour",width=300),
                numericInput("serves","How many servings:",value=1,min=1,max=50,step=1,width=150),
                textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=200),
-               textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=250),
+               textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=200),
+               textAreaInput("notes","Notes:",value="Additional notes. \nLeave blank if no notes desired.", width=750,height=100),
                actionButton('createpdf','Create PDF'),
                downloadButton('downloadPDF')
         ),
@@ -395,15 +403,20 @@ server <- function(input, output, session) {
         # create the dynamic markdown file from the text inputs
         mdpath <- paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".md")
         
-        mdtxt <- paste( 
-                   c(paste0("# ",input$name,"\n"),
-                     "\\rcAuthorSymbol{} By",paste0(": ",input$auth),"\n",
-                     "\\rcClockSymbol{} Ready in",paste0(": ",input$time),"\n",
-                     "\\rcServingSymbol{} Serves",paste0(": ",input$serves),"\n",
-                     "## Ingredients \n",paste0("\\begin{multicols}{",input$ingred_cols,"} \n"), 
-                     parseIngredients(input$ingred),"\n \\end{multicols}",
-                     "## Instructions","\n",parseInstructions(input$instruct)),
-                    collapse="\n")
+        mdvec <- c(paste0("# ",input$name,"\n"),
+                   "\\rcAuthorSymbol{} By",paste0(": ",input$auth),"\n",
+                   "\\rcClockSymbol{} Ready in",paste0(": ",input$time),"\n",
+                   "\\rcServingSymbol{} Serves",paste0(": ",input$serves),"\n",
+                   "## Ingredients \n",paste0("\\begin{multicols}{",input$ingred_cols,"} \n"), 
+                   parseIngredients(input$ingred),"\n \\end{multicols}",
+                   "## Instructions","\n",parseInstructions(input$instruct))
+        
+        # if there are notes add them
+        if(input$notes!=""){
+            mdvec <- c(mdvec,"\n","\\vspace{0.6in}","\n",parseNotes(input$notes))
+        }
+        
+        mdtxt <- paste(mdvec,collapse="\n")
         write(mdtxt,file=mdpath)
         
         # knit the pdf 
