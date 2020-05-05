@@ -10,6 +10,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinydashboardPlus)
+library(shinyjs)
 library(colourpicker)
 library(knitr)
 library(tinytex)
@@ -121,6 +122,13 @@ body <- dashboardBody(
                textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=200),
                textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=200),
                textAreaInput("notes","Notes:",value="Additional notes. \nLeave blank if no notes desired.", width=750,height=100),
+               fileInput("image_upload",
+                         label = "Image", width = "300px",
+                         accept = c("image/png", "image/jpeg", "image/jpg")),
+               div(id = "demo-basic", style = "width: 100%; height: 100%;"),
+               br(),
+               br(),
+               actionButton("crop", "Crop image"),
                actionButton('createpdf','Create PDF'),
                downloadButton('downloadPDF')
         ),
@@ -143,6 +151,8 @@ ui <- dashboardPagePlus(    title = "Roland's Recipe Generator",
 ####### SERVER CODE #######
 
 server <- function(input, output, session) {
+    
+    options(shiny.maxRequestSize=10*1024^2) 
     
     #####################################################################################################################
     
@@ -171,14 +181,14 @@ server <- function(input, output, session) {
     })
     
     # Reactive Color selectors UIs for each (reacts to palette choice)
-    output$titColSel <- renderUI({ colourInput("titcol","Title/Headers",value=reValues$titcol,palette="square") })
-    output$ornColSel <- renderUI({ colourInput("orncol","Ornament",value=reValues$orncol,palette="square") })
-    output$iconColSel <- renderUI({ colourInput("iconcol","Icons",value=reValues$iconcol,palette="square") })
-    output$icontxtColSel <- renderUI({ colourInput("icontxtcol","Icon Text",value=reValues$icontxtcol,palette="square") })
-    output$bullColSel <- renderUI({ colourInput("bullcol","Bullets",value=reValues$bullcol,palette="square") })
-    output$numColSel <- renderUI({ colourInput("numcol","Numbers",value=reValues$numcol,palette="square") })
-    output$accColSel <- renderUI({ colourInput("acccol","Note Accent",value=reValues$acccol,palette="square") })
-    output$txtColSel <- renderUI({ colourInput("txtcol","Body Text",value=reValues$txtcol,palette="square") })
+    output$titColSel <- renderUI({ colourpicker::colourInput("titcol","Title/Headers",value=reValues$titcol,palette="square") })
+    output$ornColSel <- renderUI({ colourpicker::colourInput("orncol","Ornament",value=reValues$orncol,palette="square") })
+    output$iconColSel <- renderUI({ colourpicker::colourInput("iconcol","Icons",value=reValues$iconcol,palette="square") })
+    output$icontxtColSel <- renderUI({ colourpicker::colourInput("icontxtcol","Icon Text",value=reValues$icontxtcol,palette="square") })
+    output$bullColSel <- renderUI({ colourpicker::colourInput("bullcol","Bullets",value=reValues$bullcol,palette="square") })
+    output$numColSel <- renderUI({ colourpicker::colourInput("numcol","Numbers",value=reValues$numcol,palette="square") })
+    output$accColSel <- renderUI({ colourpicker::colourInput("acccol","Note Accent",value=reValues$acccol,palette="square") })
+    output$txtColSel <- renderUI({ colourpicker::colourInput("txtcol","Body Text",value=reValues$txtcol,palette="square") })
     
     # change color reactive values based on palette selection
     observeEvent(input$palette,{
@@ -265,6 +275,34 @@ server <- function(input, output, session) {
     texpath <- paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".tex")
     pdfpath <- strsplit(paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".pdf"),"/")[[1]][2]
     filepref <- strsplit(pdfpath,".",fixed=T)[[1]][1]
+    
+    
+    
+    ## image file
+    observeEvent(input$image_upload, {
+        imgpath <- paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".jpg")
+        file.rename(input$image_upload$datapath, imgpath)
+        
+        runjs(paste0("
+                $(function () {
+                  var basic = $('#demo-basic').croppie({
+                viewport: { width: 200, height: 200 },
+                boundary: { width: 300, height: 300 },
+                enableResize: true,
+                enableOrientation: true
+        });
+          basic.croppie('bind', {
+            url: '",strsplit(imgpath,"/")[[1]][2],"'
+          });
+    });
+    "))
+    })
+        
+    
+    
+    
+    
+    
     
     # create Rnw, markdown, and PDF files based on user input
     observeEvent(input$createpdf,{
