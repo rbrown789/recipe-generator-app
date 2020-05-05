@@ -107,6 +107,11 @@ body <- dashboardBody(
     #  shinyDashboardThemes(
     #    theme = "grey_light"
     #  ),
+    shinyjs::useShinyjs(),
+    tags$head(HTML('<link href="croppie.css" rel="stylesheet">')),
+    tags$script(src = "jquery.min.js"),
+    tags$script(src = "croppie.js"),
+    
     fluidRow(
         column(width=6,
                textInput("name","Recipe Name:","Recipe Name",width=500),
