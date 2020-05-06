@@ -15,8 +15,9 @@ library(colourpicker)
 library(knitr)
 library(tinytex)
 library(fs)
+library(base64enc)
 options(tinytex.engine_args = '-shell-escape') # https://tex.stackexchange.com/questions/93917/knit-with-pdflatex-shell-escape-myfile-tex
-
+options(shiny.reactlog = T)
 
 # global functions and data
 parseIngredients <- function(txt)
@@ -108,11 +109,6 @@ body <- dashboardBody(
     #  shinyDashboardThemes(
     #    theme = "grey_light"
     #  ),
-    shinyjs::useShinyjs(),
-    tags$head(HTML('<link href="croppie.css" rel="stylesheet">')),
-    tags$script(src = "jquery.min.js"),
-    tags$script(src = "croppie.js"),
-    
     fluidRow(
         column(width=6,
                textInput("name","Recipe Name:","Recipe Name",width=500),
@@ -128,7 +124,7 @@ body <- dashboardBody(
                div(id = "demo-basic", style = "width: 100%; height: 100%;"),
                br(),
                br(),
-               actionButton("crop", "Crop image"),
+               # actionButton("crop", "Crop image"),
                actionButton('createpdf','Create PDF'),
                downloadButton('downloadPDF')
         ),
@@ -278,35 +274,10 @@ server <- function(input, output, session) {
     
     
     
-    ## image file
-    observeEvent(input$image_upload, {
-        imgpath <- paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".jpg")
-        file.rename(input$image_upload$datapath, imgpath)
-        
-        runjs(paste0("
-                $(function () {
-                  var basic = $('#demo-basic').croppie({
-                viewport: { width: 200, height: 200 },
-                boundary: { width: 300, height: 300 },
-                enableResize: true,
-                enableOrientation: true
-        });
-          basic.croppie('bind', {
-            url: '",strsplit(imgpath,"/")[[1]][2],"'
-          });
-    });
-    "))
-    })
-        
-    
-    
-    
-    
-    
-    
     # create Rnw, markdown, and PDF files based on user input
     observeEvent(input$createpdf,{
         
+       
         # create and write the dynamic latex style file 
         if(input$stylechoice=="Modern"){
             stytxt <- paste(
