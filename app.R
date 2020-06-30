@@ -16,6 +16,7 @@ library(knitr)
 library(tinytex)
 library(fs)
 library(base64enc)
+library(magick)
 options(tinytex.engine_args = '-shell-escape') # https://tex.stackexchange.com/questions/93917/knit-with-pdflatex-shell-escape-myfile-tex
 options(shiny.reactlog = T)
 
@@ -106,27 +107,33 @@ sidebar <- dashboardSidebar(width="250px",
 )
 
 body <- dashboardBody(
+    
+    tags$head(tags$script(src="doCrop.js")),
     #  shinyDashboardThemes(
     #    theme = "grey_light"
     #  ),
     fluidRow(
         column(width=6,
-               textInput("name","Recipe Name:","Recipe Name",width=500),
-               textInput("auth","Recipe Author:","Author",width=500),
-               textInput("time","Recipe Time:","e.g. 1 hour",width=300),
-               numericInput("serves","How many servings:",value=1,min=1,max=50,step=1,width=150),
-               textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=200),
-               textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=200),
-               textAreaInput("notes","Notes:",value="Additional notes. \nLeave blank if no notes desired.", width=750,height=100),
-               fileInput("image_upload",
-                         label = "Image", width = "300px",
-                         accept = c("image/png", "image/jpeg", "image/jpg")),
-               div(id = "demo-basic", style = "width: 100%; height: 100%;"),
-               br(),
-               br(),
-               # actionButton("crop", "Crop image"),
-               actionButton('createpdf','Create PDF'),
-               downloadButton('downloadPDF')
+                textInput("name","Recipe Name:","Recipe Name",width=500),
+                textInput("auth","Recipe Author:","Author",width=500),
+                textInput("time","Recipe Time:","e.g. 1 hour",width=300),
+                numericInput("serves","How many servings:",value=1,min=1,max=50,step=1,width=150),
+                textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=200),
+                textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=200),
+                textAreaInput("notes","Notes:",value="Additional notes. \nLeave blank if no notes desired.", width=750,height=100),
+                
+                fluidRow( 
+                    column(6,
+                           fileInput("image_upload",label = "Upload Image (Optional)", width = "300px",accept = c("image/png", "image/jpeg", "image/jpg")),
+                           imwidgets::cropperOutput("imgcropper",width="350px",height="350px")),
+                    column(6,h5(strong("Cropped Image")))
+                    ),
+               
+                actionButton("crop", "Crop Image"),
+                br(),
+                br(),
+                actionButton('createpdf','Create PDF'),
+                downloadButton('downloadPDF')
         ),
         column(width=6,uiOutput('showpdf'))
     )
@@ -167,7 +174,13 @@ server <- function(input, output, session) {
                                colvec = c(getColor(palettecols$palette[1],"title"),getColor(palettecols$palette[1],"ornament"),
                                           getColor(palettecols$palette[1],"icon"),getColor(palettecols$palette[1],"icontxt"),
                                           getColor(palettecols$palette[1],"bullet"),getColor(palettecols$palette[1],"number"),
-                                          getColor(palettecols$palette[1],"noteaccent"),getColor(palettecols$palette[1],"text"))
+                                          getColor(palettecols$palette[1],"noteaccent"),getColor(palettecols$palette[1],"text")),
+                               
+                               # the iterator
+                               cropiterator = 0,
+                               imgpath = NULL,
+                               image_upload = NULL
+                               
     )
     
     
@@ -261,7 +274,7 @@ server <- function(input, output, session) {
     
     #####################################################################################################################
     
-    ##### Generating the Rnw, Markdown, tex, and PDF files #####
+    ##### Generating the Rnw, Markdown, tex, and PDF file names #####
     
     # generate the temporary Rnw path name, markdown path name, tex path name, and PDF path name
     # these will be overwritten each time the user clicks "Create PDF"
@@ -271,8 +284,60 @@ server <- function(input, output, session) {
     texpath <- paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".tex")
     pdfpath <- strsplit(paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".pdf"),"/")[[1]][2]
     filepref <- strsplit(pdfpath,".",fixed=T)[[1]][1]
+
+    
+    #####################################################################################################################
+    
+    ### image upload and cropping ####
+    observeEvent(input$image_upload, {
+        reValues$image_upload <- input$image_upload
+        reValues$cropiterator  <- reValues$cropiterator + 1
+    })
+    
+
+    observe({
+        inFile <- reValues$image_upload
+        if (is.null(inFile))
+            return()
+        
+        if(reValues$cropiterator > 1){ unlink(paste0("www/",reValues$imgpath)) }
+        
+        if(inFile$type == "image/png") {
+            reValues$imgpath <- paste0(filepref,"_",reValues$cropiterator,".png")
+        } else if(inFile$type %in% c("image/jpeg", "image/jpg") ){
+            reValues$imgpath <- paste0(filepref,"_",reValues$cropiterator,".jpg")
+        }
+
+        file.copy(inFile$datapath, file.path("www/",reValues$imgpath) )
+        
+        output$imgcropper <- imwidgets::renderCropper({
+            req(reValues$image_upload)
+            imwidgets::cropper(reValues$imgpath)
+        })
+    })
     
     
+    observeEvent(input$crop,{
+        session$sendCustomMessage("crop","")
+    })
+    
+    observeEvent(input$iniateCrop,{
+        
+        ext <- strsplit(reValues$imgpath,".",fixed=T)[[1]][2]
+        
+        if(grepl("Area",input$dimensions)){
+            
+            image_read(paste0("www/",reValues$imgpath) ) %>%
+                image_crop(geometry= substr(input$dimensions,7,nchar(input$dimensions))) %>%
+                image_write( paste0("www/",filepref,"_cropped.",ext) )
+            
+        } else{
+            image_read(paste0("www/",reValues$imgpath) ) %>%
+                image_write( paste0("www/",filepref,"_cropped.",ext) )
+        }
+    })
+    
+    #####################################################################################################################
     
     # create Rnw, markdown, and PDF files based on user input
     observeEvent(input$createpdf,{
