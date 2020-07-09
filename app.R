@@ -321,6 +321,8 @@ server <- function(input, output, session) {
     
     observeEvent(input$iniateCrop,{
         
+        req(reValues$imgpath)
+        
         ext <- strsplit(reValues$imgpath,".",fixed=T)[[1]][2]
         
         if(grepl("Area",input$dimensions)){
@@ -336,6 +338,7 @@ server <- function(input, output, session) {
         }
         
         output$croppedimg <- renderImage({
+            
             
             imginfo <- image_info(img)
             imglist <- list(src = paste0("www/",filepref,"_cropped.",ext),
