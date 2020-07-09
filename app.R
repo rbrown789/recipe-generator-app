@@ -126,10 +126,8 @@ body <- dashboardBody(
                     column(6,
                            fileInput("image_upload",label = "Upload Image (Optional)", width = "300px",accept = c("image/png", "image/jpeg", "image/jpg")),
                            imwidgets::cropperOutput("imgcropper",width="350px",height="350px")),
-                    column(6,h5(strong("Cropped Image")))
+                    column(6,actionButton("crop", "Crop Image"),h5(strong("Cropped Image")),plotOutput("croppedimg",height=350))
                     ),
-               
-                actionButton("crop", "Crop Image"),
                 br(),
                 br(),
                 actionButton('createpdf','Create PDF'),
@@ -327,15 +325,34 @@ server <- function(input, output, session) {
         
         if(grepl("Area",input$dimensions)){
             
-            image_read(paste0("www/",reValues$imgpath) ) %>%
-                image_crop(geometry= substr(input$dimensions,7,nchar(input$dimensions))) %>%
-                image_write( paste0("www/",filepref,"_cropped.",ext) )
+            img <- image_read(paste0("www/",reValues$imgpath) ) %>%
+                image_crop(geometry= substr(input$dimensions,7,nchar(input$dimensions)))
+            
+            image_write(img, paste0("www/",filepref,"_cropped.",ext) )
             
         } else{
-            image_read(paste0("www/",reValues$imgpath) ) %>%
-                image_write( paste0("www/",filepref,"_cropped.",ext) )
+            img <- image_read(paste0("www/",reValues$imgpath) )
+            image_write(img, paste0("www/",filepref,"_cropped.",ext) )
         }
+        
+        output$croppedimg <- renderImage({
+            
+            imginfo <- image_info(img)
+            imglist <- list(src = paste0("www/",filepref,"_cropped.",ext),
+                            alt = "This is alternate text")
+            
+            if(imginfo$width >= imginfo$height){
+                imglist$width <- 350
+            } else{
+                imglist$height <- 350
+            }
+            
+            imglist
+            
+        },deleteFile = FALSE)
     })
+    
+
     
     #####################################################################################################################
     
