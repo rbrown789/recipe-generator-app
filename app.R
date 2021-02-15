@@ -101,7 +101,14 @@ sidebar <- dashboardSidebar(width="250px",
         
         numericInput("fontsize","Font Size",13,min=8,max=25,step=1),
         
-        numericInput("ingred_cols","# of Ingredients Columns",3,min=2,max=5,step=1)
+        numericInput("ingred_cols","# of Ingredients Columns",3,min=2,max=5,step=1),
+        
+        hr(),
+        
+        selectInput("picLoc","Choose Picture Location",
+                    c("Beginning","Before Ingredients","After Ingredients",
+                      "After Instructions","End"),
+                    selected="End")
        
     )
 )
@@ -508,11 +515,11 @@ server <- function(input, output, session) {
                    "\\rcServingSymbol{} Serves",paste0(": ",input$serves),"\n",
                    "## Ingredients \n",paste0("\\begin{multicols}{",input$ingred_cols,"} \n"), 
                    parseIngredients(input$ingred),"\n \\end{multicols}",
-                   "## Instructions","\n",parseInstructions(input$instruct))
+                   "## Instructions","\n",parseInstructions(input$instruct),"\n")
         
         # if there are notes add them
         if(input$notes!=""){
-            mdvec <- c(mdvec,"\n","\\vspace{0.6in}","\n",parseNotes(input$notes))
+            mdvec <- c(mdvec,"\\vspace{0.6in}","\n",parseNotes(input$notes),"\n")
         }
         
         
@@ -525,15 +532,16 @@ server <- function(input, output, session) {
             ## insterting the picture
             # indentifying indices,
             # options: beginning, before ingredients, before instructions, before notes, end
-            beginInd <- grep("\\rcAuthorSymbol{}",mdvec,fixed=T) - 1
-            beforeIngrInd <- grep("## Ingredients",mdvec) - 1
-            beforeInstrInd <- grep("## Instructions",mdvec) - 1
-            beforeNotesInd <- grep("\\vspace{0.6in}",mdvec,fixed=T) - 2
-            endInd <- length(mdvec)
             
             # generate picture code and insert into mdvec (currently at beginning)
+            piclocInd <- ifelse(input$picLoc == "Beginning",grep("\\rcAuthorSymbol{}",mdvec,fixed=T) - 1,
+                            ifelse(input$picLoc == "Before Ingredients",grep("## Ingredients",mdvec) - 1,
+                               ifelse(input$picLoc == "After Ingredients",grep("## Instructions",mdvec) - 1,
+                                  ifelse(input$picLoc == "After Instructions",grep("## Instructions",mdvec) + length(parseInstructions(input$instruct)) + 2,
+                                         length(mdvec)))))
+            
             picMDtxt <- sprintf("![Image Caption](%s) \n",croppedloc)
-            mdvec <- append(mdvec,picMDtxt,after = beginInd)
+            mdvec <- append(mdvec,picMDtxt,after = piclocInd)
         }
         
         # collapse the text into a single string
