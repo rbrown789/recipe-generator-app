@@ -17,6 +17,8 @@ library(tinytex)
 library(fs)
 library(base64enc)
 library(magick)
+library(exifr)
+library(magrittr)
 options(tinytex.engine_args = '-shell-escape') # https://tex.stackexchange.com/questions/93917/knit-with-pdflatex-shell-escape-myfile-tex
 options(shiny.reactlog = T)
 
@@ -40,6 +42,81 @@ parseNotes <- function(txt)
 {
     notesvec <- strsplit(txt,"\n")[[1]]
     out <- paste0("> ",notesvec)
+    return(out)
+}
+
+extractExifOrientation <- function(filepath)
+{
+    # filepath <- "C:/Users/rbrow/OneDrive/Pictures/IMG_8096.JPG"
+    
+    exifdat <- tryCatch(read_exif(filepath),error=function(cond){return(NA)})
+    
+    # if no exif data, set to 1
+    if(!is.data.frame(exifdat)){
+        out <- 1
+    # if no orientation flag, set to 1
+    } else if(!"Orientation" %in% names(exifdat)){
+        out <- 1
+    # otherwise extract orientation
+    } else{
+        out <- exifdat$Orientation
+    }
+    return(out)
+}
+
+
+rotateByExifOrientation <- function(img,exifOrientation)
+{
+    if(exifOrientation==1){
+        out <- img
+    } else if(exifOrientation==2){
+        out <- img %>% image_flop()
+    } else if(exifOrientation==3){
+        out <- img %>% image_rotate(degrees=180)
+    } else if(exifOrientation==4){
+        out <- img %>% image_flip()
+    } else if(exifOrientation==5){
+        out <- img %>% 
+            image_rotate(degrees=90) %>%
+            image_flop()
+    } else if(exifOrientation==6){
+        out <- img %>% image_rotate(degrees=90)
+    } else if(exifOrientation==7){
+        out <- img %>% 
+            image_rotate(degrees=270) %>%
+            image_flop()
+    } else if(exifOrientation==8){
+        out <- img %>% image_rotate(degrees=270)
+    }
+    
+    return(out)
+}
+
+
+returnByExifOrientation <- function(img,exifOrientation)
+{
+    if(exifOrientation==1){
+        out <- img
+    } else if(exifOrientation==2){
+        out <- img %>% image_flop()
+    } else if(exifOrientation==3){
+        out <- img %>% image_rotate(degrees=180)
+    } else if(exifOrientation==4){
+        out <- img %>% image_flip()
+    } else if(exifOrientation==5){
+        out <- img %>% 
+            image_flop() %>%
+            imagef_rotate(degrees=270)
+    } else if(exifOrientation==6){
+        out <- img %>% image_rotate(degrees=270)
+    } else if(exifOrientation==7){
+        out <- img %>%
+            image_flop() %>%
+            image_rotate(degrees=90)
+    } else if(exifOrientation==8){
+        out <- img %>% image_rotate(degrees=90)
+    }
+    
     return(out)
 }
 
@@ -338,8 +415,15 @@ server <- function(input, output, session) {
         
         if(grepl("Area",input$dimensions)){
             
-            img <- image_read(paste0("www/",reValues$imgpath) ) %>%
-                image_crop(geometry= substr(input$dimensions,7,nchar(input$dimensions)))
+            fullimgpath <- paste0("www/",reValues$imgpath)
+            ori <- extractExifOrientation(fullimgpath)
+            
+            # this uses the exif orientation to appropriately rotate/mirror prior
+            # to cropping, and then re-rotate/mirror before saving
+            img <- image_read(fullimgpath) %>%
+                rotateByExifOrientation(ori) %>%
+                image_crop(geometry= substr(input$dimensions,7,nchar(input$dimensions))) %>%
+                returnByExifOrientation(ori)
             
             image_write(img, paste0("www/",filepref,"_cropped.",ext) )
             
