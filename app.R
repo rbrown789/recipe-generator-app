@@ -202,6 +202,9 @@ body <- dashboardBody(
     #  ),
     fluidRow(
         column(width=6,
+               fluidRow(column(2,actionButton('createpdf','Create PDF')),
+                        column(2,downloadButton('downloadPDF'))),
+                br(),
                 textInput("name","Recipe Name:","Recipe Name",width=500),
                 textInput("auth","Recipe Author:","Author",width=500),
                 textInput("time","Recipe Time:","e.g. 1 hour",width=300),
@@ -211,15 +214,13 @@ body <- dashboardBody(
                 textAreaInput("notes","Notes:",value="Additional notes. \nLeave blank if no notes desired.", width=750,height=100),
                 
                 fluidRow( 
-                    column(6,
-                           fileInput("image_upload",label = "Upload Image (Optional)", width = "300px",accept = c("image/png", "image/jpeg", "image/jpg")),
+                    column(6,style='padding-right:0px;',
+                           fileInput("image_upload",label = "Upload Image (Optional)", width = "350px",accept = c("image/png", "image/jpeg", "image/jpg")),
                            imwidgets::cropperOutput("imgcropper",width="350px",height="350px")),
-                    column(6,actionButton("crop", "Crop Image"),h5(strong("Cropped Image")),plotOutput("croppedimg",height=350))
-                    ),
-                br(),
-                br(),
-                actionButton('createpdf','Create PDF'),
-                downloadButton('downloadPDF')
+                    column(6,style='padding-left:0px;',
+                           br(),actionButton("crop", "Crop Image"),h5(strong("Final Image")),plotOutput("croppedimg",height=350))
+                    )
+                
         ),
         column(width=6,uiOutput('showpdf'))
     )
@@ -426,6 +427,7 @@ server <- function(input, output, session) {
                 returnByExifOrientation(ori)
             
             image_write(img, paste0("www/",filepref,"_cropped.",ext) )
+            image_write(img %>% rotateByExifOrientation(ori), paste0("www/",filepref,"_md.",ext) )
             
         } else{
             img <- image_read(paste0("www/",reValues$imgpath) )
@@ -435,7 +437,7 @@ server <- function(input, output, session) {
         output$croppedimg <- renderImage({
             
             
-            imginfo <- image_info(img)
+            imginfo <- image_info(img %>% rotateByExifOrientation(ori))
             imglist <- list(src = paste0("www/",filepref,"_cropped.",ext),
                             alt = "This is alternate text")
             
@@ -613,7 +615,7 @@ server <- function(input, output, session) {
         
         # if cropped picture
         uncroppedloc <- paste0(reValues$imgpath)
-        croppedloc <- paste0(filepref,"_cropped.",strsplit(reValues$imgpath,".",fixed=T)[[1]][2])
+        croppedloc <- paste0(filepref,"_md.",strsplit(reValues$imgpath,".",fixed=T)[[1]][2])
         
         if(file.exists(paste0("www/",croppedloc) )){
             
