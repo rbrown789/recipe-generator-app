@@ -178,7 +178,7 @@ sidebar <- dashboardSidebar(width="250px",
         
         numericInput("fontsize","Font Size",13,min=8,max=25,step=1),
         
-        numericInput("ingred_cols","# of Ingredients Columns",3,min=2,max=5,step=1),
+        numericInput("ingred_cols","# of Ingredients Columns",3,min=1,max=4,step=1),
         
         hr(),
         
@@ -599,12 +599,18 @@ server <- function(input, output, session) {
         # create the dynamic markdown file from the text inputs
         mdpath <- paste0(strsplit(rnwpath,".",fixed=T)[[1]][1],".md")
         
+        if(input$ingred_cols>1){
+            multicoltxt <- c(paste0("\\begin{multicols}{",input$ingred_cols,"} \n"),"\n \\end{multicols}")
+        }else{
+            multicoltxt <- c("\n","\n")
+        }
+        
         mdvec <- c(paste0("# ",input$name,"\n"),
                    "\\rcAuthorSymbol{} By",paste0(": ",input$auth),"\n",
                    "\\rcClockSymbol{} Ready in",paste0(": ",input$time),"\n",
                    "\\rcServingSymbol{} Serves",paste0(": ",input$serves),"\n",
-                   "## Ingredients \n",paste0("\\begin{multicols}{",input$ingred_cols,"} \n"), 
-                   parseIngredients(input$ingred),"\n \\end{multicols}",
+                   "## Ingredients \n",multicoltxt[1], 
+                   parseIngredients(input$ingred),multicoltxt[2],
                    "## Instructions","\n",parseInstructions(input$instruct),"\n")
         
         # if there are notes add them
@@ -613,32 +619,41 @@ server <- function(input, output, session) {
         }
         
         
-        # if cropped picture
-        uncroppedloc <- paste0(reValues$imgpath)
-        croppedloc <- paste0(filepref,"_md.",strsplit(reValues$imgpath,".",fixed=T)[[1]][2])
         
-        if(file.exists(paste0("www/",croppedloc) )){
+        
+        # if a picture has been uploaded
+        if(!is.null(reValues$imgpath)){
             
-            ## insterting the picture
-            # indentifying indices,
-            # options: beginning, before ingredients, before instructions, before notes, end
+            uncroppedloc <- paste0(reValues$imgpath)
+            croppedloc <- paste0(filepref,"_md.",strsplit(reValues$imgpath,".",fixed=T)[[1]][2])
             
-            # generate picture code and insert into mdvec (currently at beginning)
-            piclocInd <- ifelse(input$picLoc == "Beginning",grep("\\rcAuthorSymbol{}",mdvec,fixed=T) - 1,
-                            ifelse(input$picLoc == "Before Ingredients",grep("## Ingredients",mdvec) - 1,
-                               ifelse(input$picLoc == "After Ingredients",grep("## Instructions",mdvec) - 1,
-                                  ifelse(input$picLoc == "After Instructions",grep("## Instructions",mdvec) + length(parseInstructions(input$instruct)) + 2,
-                                         length(mdvec)))))
-            
-            if(input$picJustify=="Centered"){
-                cntrtxt <- c("\\begin{center}\n","\n\\end{center}")
-             } else{ cntrtxt <- c("","") }
-            
-            picMDtxt <- sprintf("%s\\includegraphics[width=%.2f\\textwidth,height=\\textheight]{%s} %s \n",
-                                cntrtxt[1],input$picWidth/100,croppedloc,cntrtxt[2])
-            
-            mdvec <- append(mdvec,picMDtxt,after = piclocInd)
+            # if a picture has been cropped
+            if(file.exists(paste0("www/",croppedloc) )){
+                
+                ## insterting the picture
+                # indentifying indices,
+                # options: beginning, before ingredients, before instructions, before notes, end
+                
+                # generate picture code and insert into mdvec (currently at beginning)
+                piclocInd <- ifelse(input$picLoc == "Beginning",grep("\\rcAuthorSymbol{}",mdvec,fixed=T) - 1,
+                                    ifelse(input$picLoc == "Before Ingredients",grep("## Ingredients",mdvec) - 1,
+                                           ifelse(input$picLoc == "After Ingredients",grep("## Instructions",mdvec) - 1,
+                                                  ifelse(input$picLoc == "After Instructions",grep("## Instructions",mdvec) + length(parseInstructions(input$instruct)) + 2,
+                                                         length(mdvec)))))
+                
+                if(input$picJustify=="Centered"){
+                    cntrtxt <- c("\\begin{center}\n","\n\\end{center}")
+                } else{ cntrtxt <- c("","") }
+                
+                picMDtxt <- sprintf("%s\\includegraphics[width=%.2f\\textwidth,height=\\textheight]{%s} %s \n",
+                                    cntrtxt[1],input$picWidth/100,croppedloc,cntrtxt[2])
+                
+                mdvec <- append(mdvec,picMDtxt,after = piclocInd)
+            }
         }
+        
+        
+        
         
         # collapse the text into a single string
         mdtxt <- paste(mdvec,collapse="\n")
