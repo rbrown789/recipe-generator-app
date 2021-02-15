@@ -105,10 +105,14 @@ sidebar <- dashboardSidebar(width="250px",
         
         hr(),
         
-        selectInput("picLoc","Choose Picture Location",
+        selectInput("picLoc","Image Location",
                     c("Beginning","Before Ingredients","After Ingredients",
                       "After Instructions","End"),
-                    selected="End")
+                    selected="End"),
+        
+        radioButtons("picJustify","Image Justification",c("Centered","Left"),"Centered"),
+        
+        sliderInput("picWidth","Image Width",20,100,70,5,post="%")
        
     )
 )
@@ -540,7 +544,13 @@ server <- function(input, output, session) {
                                   ifelse(input$picLoc == "After Instructions",grep("## Instructions",mdvec) + length(parseInstructions(input$instruct)) + 2,
                                          length(mdvec)))))
             
-            picMDtxt <- sprintf("![Image Caption](%s) \n",croppedloc)
+            if(input$picJustify=="Centered"){
+                cntrtxt <- c("\\begin{center}\n","\n\\end{center}")
+             } else{ cntrtxt <- c("","") }
+            
+            picMDtxt <- sprintf("%s\\includegraphics[width=%.2f\\textwidth,height=\\textheight]{%s} %s \n",
+                                cntrtxt[1],input$picWidth/100,croppedloc,cntrtxt[2])
+            
             mdvec <- append(mdvec,picMDtxt,after = piclocInd)
         }
         
