@@ -515,6 +515,28 @@ server <- function(input, output, session) {
             mdvec <- c(mdvec,"\n","\\vspace{0.6in}","\n",parseNotes(input$notes))
         }
         
+        
+        # if cropped picture
+        uncroppedloc <- paste0(reValues$imgpath)
+        croppedloc <- paste0(filepref,"_cropped.",strsplit(reValues$imgpath,".",fixed=T)[[1]][2])
+        
+        if(file.exists(paste0("www/",croppedloc) )){
+            
+            ## insterting the picture
+            # indentifying indices,
+            # options: beginning, before ingredients, before instructions, before notes, end
+            beginInd <- grep("\\rcAuthorSymbol{}",mdvec,fixed=T) - 1
+            beforeIngrInd <- grep("## Ingredients",mdvec) - 1
+            beforeInstrInd <- grep("## Instructions",mdvec) - 1
+            beforeNotesInd <- grep("\\vspace{0.6in}",mdvec,fixed=T) - 2
+            endInd <- length(mdvec)
+            
+            # generate picture code and insert into mdvec (currently at beginning)
+            picMDtxt <- sprintf("![Image Caption](%s) \n",croppedloc)
+            mdvec <- append(mdvec,picMDtxt,after = beginInd)
+        }
+        
+        # collapse the text into a single string
         mdtxt <- paste(mdvec,collapse="\n")
         write(mdtxt,file=mdpath)
         
