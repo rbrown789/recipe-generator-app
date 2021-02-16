@@ -145,91 +145,105 @@ getColors <- function(palette) { unlist( palettecols[palettecols$palette == pale
 
 ####### UI CODE #######
 
-header <- dashboardHeaderPlus( 
-    titleWidth="250px",
-    title = "Recipe Generator"
-)
 
-sidebar <- dashboardSidebar(width="250px",
-    sidebarMenu(
-        
-        # h5("PDF Appearance Options"),
-        # h5("(no effect currently)"),
-
-        selectInput("stylechoice","Choose Style",c("Classic","Modern","Scribbly"),selected="Classic"),
-        
-        hr(),
-        
-        uiOutput("palSelect"),
-        
-        fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("titColSel") ),
-                  column(5,style='padding: 0px 0px;',uiOutput("ornColSel")) ),
-        
-        fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("iconColSel")),
-                 column(5,style='padding: 0px 0px;',uiOutput("icontxtColSel"))),
-        
-        fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("bullColSel")),
-                 column(5,style='padding: 0px 0px;',uiOutput("numColSel"))),
-        
-        fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("accColSel")),
-                 column(5,style='padding: 0px 0px;',uiOutput("txtColSel"))),
-        
-        hr(),
-        
-        numericInput("fontsize","Font Size",13,min=8,max=25,step=1),
-        
-        numericInput("ingred_cols","# of Ingredients Columns",3,min=1,max=4,step=1),
-        
-        hr(),
-        
-        selectInput("picLoc","Image Location",
-                    c("Beginning","Before Ingredients","After Ingredients",
-                      "After Instructions","End"),
-                    selected="End"),
-        
-        radioButtons("picJustify","Image Justification",c("Centered","Left"),"Centered"),
-        
-        sliderInput("picWidth","Image Width",20,100,70,5,post="%")
-       
-    )
-)
-
-body <- dashboardBody(
+ui <- function(req){
     
-    tags$head(tags$script(src="doCrop.js")),
-    #  shinyDashboardThemes(
-    #    theme = "grey_light"
-    #  ),
-    fluidRow(
-        column(width=6,
-               fluidRow(column(2,actionButton('createpdf','Create PDF')),
-                        column(2,downloadButton('downloadPDF'))),
-                br(),
-                textInput("name","Recipe Name:","Recipe Name",width=500),
-                textInput("auth","Recipe Author:","Author",width=500),
-                textInput("time","Recipe Time:","e.g. 1 hour",width=300),
-                numericInput("serves","How many servings:",value=1,min=1,max=50,step=1,width=150),
-                textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=200),
-                textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=200),
-                textAreaInput("notes","Notes:",value="Additional notes. \nLeave blank if no notes desired.", width=750,height=100),
-                
-                fluidRow( 
-                    column(6,style='padding-right:0px;',
-                           fileInput("image_upload",label = "Upload Image (Optional)", width = "350px",accept = c("image/png", "image/jpeg", "image/jpg")),
-                           imwidgets::cropperOutput("imgcropper",width="350px",height="350px")),
-                    column(6,style='padding-left:0px;',
-                           br(),actionButton("crop", "Crop Image"),h5(strong("Final Image")),plotOutput("croppedimg",height=350))
-                    )
-                
-        ),
-        column(width=6,uiOutput('showpdf'))
+    
+    header <- dashboardHeaderPlus( 
+        titleWidth="250px",
+        title = "Recipe Generator"
     )
-)
-
-ui <- dashboardPagePlus(    title = "Roland's Recipe Generator",
-                            enable_preloader = TRUE,
-                            header, sidebar, body,
-                            skin = "blue")
+    
+    sidebar <- dashboardSidebar(width="250px",
+                                sidebarMenu(
+                                    
+                                    # h5("PDF Appearance Options"),
+                                    # h5("(no effect currently)"),
+                                    
+                                    selectInput("stylechoice","Choose Style",c("Classic","Modern","Scribbly"),selected="Classic"),
+                                    
+                                    hr(),
+                                    
+                                    uiOutput("palSelect"),
+                                    
+                                    fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("titColSel") ),
+                                             column(5,style='padding: 0px 0px;',uiOutput("ornColSel")) ),
+                                    
+                                    fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("iconColSel")),
+                                             column(5,style='padding: 0px 0px;',uiOutput("icontxtColSel"))),
+                                    
+                                    fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("bullColSel")),
+                                             column(5,style='padding: 0px 0px;',uiOutput("numColSel"))),
+                                    
+                                    fluidRow(column(5,offset=1,style='padding: 0px 0px;',uiOutput("accColSel")),
+                                             column(5,style='padding: 0px 0px;',uiOutput("txtColSel"))),
+                                    
+                                    hr(),
+                                    
+                                    numericInput("fontsize","Font Size",13,min=8,max=25,step=1),
+                                    
+                                    numericInput("ingred_cols","# of Ingredients Columns",3,min=1,max=4,step=1),
+                                    
+                                    hr(),
+                                    
+                                    selectInput("picLoc","Image Location",
+                                                c("Beginning","Before Ingredients","After Ingredients",
+                                                  "After Instructions","End"),
+                                                selected="End"),
+                                    
+                                    radioButtons("picJustify","Image Justification",c("Centered","Left"),"Centered"),
+                                    
+                                    sliderInput("picWidth","Image Width",20,100,70,5,post="%"),
+                                    
+                                    hr(),
+                                    
+                                    bookmarkButton()
+                                    
+                                )
+    )
+    
+    body <- dashboardBody(
+        
+        tags$head(tags$script(src="doCrop.js")),
+        #  shinyDashboardThemes(
+        #    theme = "grey_light"
+        #  ),
+        fluidRow(
+            column(width=6,
+                   fluidRow(column(2,actionButton('createpdf','Create PDF')),
+                            column(2,downloadButton('downloadPDF'))),
+                   br(),
+                   textInput("name","Recipe Name:","Recipe Name",width=500),
+                   textInput("auth","Recipe Author:","Author",width=500),
+                   textInput("time","Recipe Time:","e.g. 1 hour",width=300),
+                   numericInput("serves","How many servings:",value=1,min=1,max=50,step=1,width=150),
+                   textAreaInput("ingred","Ingredients:",value="List ingredients.\nOne per line.\nDo not include bullets.", width=750,height=200),
+                   textAreaInput("instruct","Instructions:",value="List instructions.\nOne per line.\nDo not include numbers.", width=750,height=200),
+                   textAreaInput("notes","Notes:",value="Additional notes. \nLeave blank if no notes desired.", width=750,height=100),
+                   
+                   fluidRow( 
+                       column(6,style='padding-right:0px;',
+                              fileInput("image_upload",label = "Upload Image (Optional)", width = "350px",accept = c("image/png", "image/jpeg", "image/jpg")),
+                              imwidgets::cropperOutput("imgcropper",width="350px",height="350px")),
+                       column(6,style='padding-left:0px;',
+                              br(),actionButton("crop", "Crop Image"),h5(strong("Final Image")),plotOutput("croppedimg",height=350))
+                   )
+                   
+            ),
+            column(width=6,uiOutput('showpdf'))
+        )
+    )
+    
+    
+    
+    
+    
+    dashboardPagePlus(    title = "Roland's Recipe Generator",
+                          enable_preloader = TRUE,
+                          header, sidebar, body,
+                          skin = "blue")
+}
+    
 
 
 #####################################################################################################################
@@ -689,4 +703,4 @@ server <- function(input, output, session) {
 
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "url")
